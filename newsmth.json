@@ -1,0 +1,176 @@
+{
+  "crawler_name": "newsmth",
+  "conf": {
+    "crawler_type": "navigation",
+    "crawler_name": "newsmth",
+    "crawler_desp": "水木社区",
+    "start_urls": [
+      "http://www.newsmth.net/nForum/section/1",
+      "http://www.newsmth.net/nForum/section/2",
+      "http://www.newsmth.net/nForum/section/3",
+      "http://www.newsmth.net/nForum/section/4",
+      "http://www.newsmth.net/nForum/section/5",
+      "http://www.newsmth.net/nForum/section/6",
+      "http://www.newsmth.net/nForum/section/7",
+      "http://www.newsmth.net/nForum/section/8",
+      "http://www.newsmth.net/nForum/section/9",
+      "http://www.newsmth.net/nForum/section/A"
+    ],
+    "urls_file": "",
+    "parse_confs": {
+      "article": {
+        "parser_type": "html",
+        "parser_name": "article",
+        "no_default_fields": false,
+        "example_url": "http://www.newsmth.net/nForum/article/Universal/1429291",
+        "rules": {
+          "posts": [
+            {
+              "rule_type": "html",
+              "item_key": "content",
+              "is_seed_url": false,
+              "xpath": ".//td[contains(concat(' ', @class, ' '), ' a-content ')]",
+              "regex": "",
+              "js": "function process(s) {\n    //console.log(s);\n    var pattern = /(?:.*?)发信人:(.+?) \\((.+?)\\), 信区:(.+?)<br\\/>(?:.*)标(?:.*?)题:(.+?)<br\\/>(?:.*?)发信站:(.+?)\\((.+?)\\)(?:.*?)站内(.+?)※ 来源:(.+?)\\[FROM: (.+?)\\]/mg;\n    var names = new Array(\"user\", \"nick\", \"board\", \"title\", \"mailsite\", \"time\", \"content\", \"source\", \"ip\");\n    var obj = {};\n    var r = pattern.exec(s);\n    if (r) {\n        for (var i = 1; i < r.length; i++) {\n            var ret = r[i].replace(/<br\\/>/g, \"\\n\").replace(/<(?:.|\\s)*?>/g, \"\");\n            obj[names[i-1]] = ret.trim();\n        }\n    }\n    \n    var img_pattern = /单击此查看原图(?:.*?)src=\"(.+?)\"/mg;\n    r = img_pattern.exec(s);\n    var imgs = [];\n    while (r) {\n        imgs.push(r[1]);\n        r = img_pattern.exec(s);\n    }\n    if (imgs.length > 0) {\n        obj.imgs = imgs;\n    }\n    \n    console.log(JSON.stringify(obj));\n    return obj;\n}"
+            },
+            {
+              "rule_type": "string",
+              "item_key": "floor",
+              "is_seed_url": false,
+              "xpath": ".//span[contains(@class, 'a-pos')]",
+              "regex": "(\\d+|楼主)",
+              "js": ""
+            }
+          ],
+          "root": [
+            {
+              "rule_type": "url",
+              "item_key": "article",
+              "is_seed_url": false,
+              "xpath": "//div[@class='t-pre']//li[@class='page-select']/following-sibling::li[1]/a/@href",
+              "regex": "",
+              "js": ""
+            },
+            {
+              "rule_type": "dom",
+              "item_key": "posts",
+              "is_seed_url": false,
+              "xpath": "//table[contains(concat(' ', @class, ' '), ' article ')]",
+              "regex": "",
+              "js": ""
+            }
+          ]
+        },
+        "post_processor": "function copy_default(s, d) {\n    d.from_url_ = s.from_url_;\n    d.crawl_time_ = s.crawl_time_;\n    d.from_parser_name_ = s.from_parser_name_;\n}\nfunction process(r) {\n    console.log(JSON.stringify(r));\n    var results = [];\n    for (var i = 0; i < r.length; i++) {\n        if ('posts' in r[i]) {\n            var article = r[i].from_url_;\n            var p = /([^\\/]+?\\/\\d+)/g;\n            var m = p.exec(article);\n            if (m) {\n                article = m[1];\n            }\n           \n            for (var j = 0; j < r[i].posts.length; j++) {\n                var item = r[i].posts[j].content;\n                item.floor = r[i].posts[j].floor;\n                if (item.floor == '楼主') item.floor = \"0\";\n                copy_default(r[i], item);\n                item.es_type = \"posts\";\n                item.id = article + \"#\" + item.floor;\n                results.push(item);\n            }\n        }\n    }\n    return results;\n}",
+        "revisit_interval": 0
+      },
+      "board": {
+        "parser_type": "html",
+        "parser_name": "board",
+        "no_default_fields": false,
+        "example_url": "http://www.newsmth.net/nForum/board/Universal",
+        "rules": {
+          "root": [
+            {
+              "rule_type": "url",
+              "item_key": "article",
+              "is_seed_url": false,
+              "xpath": "//tr[not(contains(@class, 'top ad'))]/td[2]/a/@href",
+              "regex": "",
+              "js": ""
+            },
+            {
+              "rule_type": "url",
+              "item_key": "board",
+              "is_seed_url": false,
+              "xpath": "//div[@class='t-pre']//li[@class='page-select']/following-sibling::li[1]/a/@href",
+              "regex": "",
+              "js": ""
+            },
+            {
+              "rule_type": "string",
+              "item_key": "last_modified_",
+              "is_seed_url": false,
+              "xpath": "//tr[not(contains(@class, 'top'))][1]/td[8]",
+              "regex": "",
+              "js": ""
+            }
+          ]
+        },
+        "post_processor": "",
+        "revisit_interval": 0
+      },
+      "section": {
+        "parser_type": "html",
+        "parser_name": "section",
+        "no_default_fields": false,
+        "example_url": "http://www.newsmth.net/nForum/section/1",
+        "rules": {
+          "board": [
+            {
+              "rule_type": "url",
+              "item_key": "board",
+              "is_seed_url": false,
+              "xpath": "./@href",
+              "regex": "",
+              "js": ""
+            },
+            {
+              "rule_type": "string",
+              "item_key": "board_name",
+              "is_seed_url": false,
+              "xpath": "./text()",
+              "regex": "",
+              "js": ""
+            }
+          ],
+          "root": [
+            {
+              "rule_type": "dom",
+              "item_key": "section",
+              "is_seed_url": false,
+              "xpath": "//tr[contains(td[2]/text(),'[二级目录]')]/td[1]/a",
+              "regex": "",
+              "js": ""
+            },
+            {
+              "rule_type": "dom",
+              "item_key": "board",
+              "is_seed_url": false,
+              "xpath": "//tr[not(contains(td[2]/text(),'[二级目录]'))]/td[1]/a",
+              "regex": "",
+              "js": ""
+            }
+          ],
+          "section": [
+            {
+              "rule_type": "url",
+              "item_key": "section",
+              "is_seed_url": false,
+              "xpath": "./@href",
+              "regex": "",
+              "js": ""
+            },
+            {
+              "rule_type": "string",
+              "item_key": "section_name",
+              "is_seed_url": false,
+              "xpath": "./text()",
+              "regex": "",
+              "js": ""
+            }
+          ]
+        },
+        "post_processor": "",
+        "revisit_interval": 0
+      }
+    },
+    "start_parser_name": "section",
+    "es_uri": "http://127.0.0.1:9200"
+  },
+  "weight": 1,
+  "status": "disabled",
+  "create_time": 1500426840,
+  "modify_time": 1500540077,
+  "author": "liuzhanliang"
+}

@@ -1,0 +1,59 @@
+{
+  "crawler_name": "bjjtgl",
+  "conf": {
+    "crawler_type": "navigation",
+    "crawler_name": "bjjtgl",
+    "crawler_desp": "北京路况通知",
+    "start_urls": [
+      "http://sslk.bjjtgl.gov.cn/roadpublish/Map/vmsimg/vmsimage/secondrealinfo.htm"
+    ],
+    "urls_file": "",
+    "parse_confs": {
+      "list": {
+        "parser_type": "html",
+        "parser_name": "list",
+        "no_default_fields": false,
+        "example_url": "http://sslk.bjjtgl.gov.cn/roadpublish/Map/vmsimg/vmsimage/secondrealinfo.htm",
+        "rules": {
+          "info": [
+            {
+              "rule_type": "string",
+              "item_key": "class",
+              "is_seed_url": false,
+              "xpath": "@class",
+              "regex": "",
+              "js": ""
+            },
+            {
+              "rule_type": "string",
+              "item_key": "text",
+              "is_seed_url": false,
+              "xpath": "text()",
+              "regex": "",
+              "js": ""
+            }
+          ],
+          "root": [
+            {
+              "rule_type": "dom",
+              "item_key": "info",
+              "is_seed_url": false,
+              "xpath": "//a",
+              "regex": "",
+              "js": ""
+            }
+          ]
+        },
+        "post_processor": "function copy_default(s, d) {\n    //d.from_url_ = s.from_url_;\n    d.crawl_time_ = s.crawl_time_;\n    //d.from_parser_name_ = s.from_parser_name_;\n}\nfunction process(r) {\n    //console.log(JSON.stringify(r));\n    var results = [];\n    for (var i = 0; i < r.length; i++) {\n        if ('info' in r[i]) {\n            copy_default(r[i], r[i].info)\n            var text = r[i].info.text;\n            var pos = text.indexOf(',');\n            if (pos > 0) {\n                r[i].info.msg = text.substr(pos+1);\n                var t = new Date().getFullYear() + \"-\" + text.substr(0, pos);\n                r[i].info.time = t;\n            } else {\n                r[i].info.msg = r[i].info.text;\n                r[i].info.time = r[i].info.crawl_time_;\n            }\n            //delete r[i].info.text;\n            results.push(r[i].info);\n        }\n    }\n    console.log(JSON.stringify(results));\n    return results;\n}",
+        "revisit_interval": 120
+      }
+    },
+    "start_parser_name": "list",
+    "es_uri": "http://127.0.0.1:9200"
+  },
+  "weight": 1,
+  "status": "disabled",
+  "create_time": 1500522211,
+  "modify_time": 1500540033,
+  "author": "liuzhanliang"
+}
